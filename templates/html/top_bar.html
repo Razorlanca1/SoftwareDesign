@@ -1,0 +1,13 @@
+<div class="menu-container"> 
+	<ul class="menu-list">
+		<li class="{% if current == 'Tasks' %} active-menu-tab {% endif %}"><a href="/">Tasks</a></li>
+		{% if current == 'Task' %}
+		<li class="{% if current == 'Task' %} active-menu-tab {% endif %}"><a href="#">Task</a></li>
+		{% endif %}
+		{% if current == 'Exception' %}
+		<li class="{% if current == 'Exception' %} active-menu-tab {% endif %}"><a href="#">Exception</a></li>
+		{% endif %}
+		<li class="{% if current == 'Add task' %} active-menu-tab {% endif %}"><a href="/add_task_page">Add task</a></li>
+		<!--<li class="{% if current == 'Delete task' %} active-menu-tab {% endif %}"><a href="/delete_task_page">Delete task</a></li>-->
+	</ul>
+</div>

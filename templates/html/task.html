@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>Задание</title>
+		<link rel="stylesheet" href="/css/style.css">
+	</head>
+	<body>
+
+		{% include 'html/top_bar.html' %}
+
+		<div class="table">
+			{% for key in task.keys() %}
+				{% if key == "Id" %}
+					<p><a href="/task/{{task[key]}}">{{key}}: {{task[key]}}</a></p>
+				{% else %}
+					<p>{{key}}: {{task[key]}}</p>
+				{% endif %}
+			{% endfor %}
+		</div>
+
+	</body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>Удаление</title>
+		<link rel="stylesheet" href="/css/style.css">
+	</head>
+	<body>
+
+		{% include 'html/top_bar.html' %}
+
+		{% for task in tasks %}
+			<div class="table">
+				{% for key in task.keys() %}
+					{% if key == "Id" %}
+					<p><a href="/task/{{task[key]}}">{{key}}: {{task[key]}}</a></p>
+					{% else %}
+					<p>{{key}}: {{task[key]}}</p>
+					{% endif %}
+				{% endfor %}
+				<a href="/delete/{{task['Id']}}"><button>Удалить</button></a></p>
+			</div>
+		{% endfor %}
+
+	</body>
+</html>

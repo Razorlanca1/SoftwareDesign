@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>Добавление</title>
+		<link rel="stylesheet" href="/css/style.css">
+	</head>
+	<body>
+
+		{% include 'html/top_bar.html' %}
+
+		<form action="/post_add_task" method="post">
+        	Id: <input type="number" name="id" value="0" min="0"><br>
+        	Name: <input type="text" name="name"><br>
+        	Difficult: <input type="number" name="difficult" value="0" min="0"><br>
+        	Description: <input type="text" name="description"><br>
+	    	<input style="width: 40%; height: 50px" type="submit" name = "submit" value="Send" class="submit">
+		</form>
+
+	</body>
+</html>
