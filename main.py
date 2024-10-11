@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, Response, Form
 from typing import Optional
+import redis, pickle
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -10,27 +11,32 @@ from Task import Task
 app = FastAPI(title="Laba 1", description="This is a laba 1", version="1.0")
 templates = Jinja2Templates(directory="templates")
 
-tasks = [Task(1, "abc", 10, "rrrrrrrrrrrr")]
+db = redis.Redis(host='redis-15797.c93.us-east-1-3.ec2.redns.redis-cloud.com',
+  port=15797,
+  password='2AdSepjiY8UnQ8FwuC4mfxwxd90vTykb')
+
+db.flushdb()
+db.lpush("Tasks", pickle.dumps(Task(1, "abc", 10, "rrrrrrrrrrrr")))
 
 
 @app.get("/")
 async def main_page(request: Request):
-    global tasks
-
     params = {"tasks": [], "request": request, "current": "Tasks"}
+    tasks = db.lrange("Tasks", 0, -1)
+
     for task in tasks:
-        params["tasks"].append(task.get_info())
+        params["tasks"].append(pickle.loads(task).get_info())
 
     return templates.TemplateResponse("html/main.html", params)
 
 
 @app.get("/task/{id}")
 async def task_page(request: Request, id):
-    global tasks
-
     params = {"request": request, "current": "Task"}
+    tasks = db.lrange("Tasks", 0, -1)
+
     for task in tasks:
-        info = task.get_info()
+        info = pickle.loads(task).get_info()
         if str(info["Id"]) == id:
             params["task"] = info
             break
@@ -40,19 +46,37 @@ async def task_page(request: Request, id):
     return templates.TemplateResponse("html/task.html", params)
 
 
-@app.put("/add_task")
-async def add_task(request: Request, id: Optional[int] = Form(None),
+@app.put("/update_task")
+async def update_task(request: Request, id: Optional[int] = Form(None),
                    name: Optional[str] = Form(None), difficult: Optional[int] = Form(None),
                    description: Optional[str] = Form(None)):
-    global tasks
+    tasks = db.lrange("Tasks", 0, -1)
 
     for task in tasks:
-        info = task.get_info()
+        t = pickle.loads(task)
+        info = t.get_info()
+        if info["Id"] == id:
+            db.lrem("Tasks", 0, task)
+            t.update(name, difficult, description)
+            db.lpush("Tasks", pickle.dumps(t))
+            return RedirectResponse(f"/task/{id}", status_code=303)
+
+    return RedirectResponse("/", status_code=303)
+
+
+@app.put("/add_task")
+async def add_task(request: Request, id: int = Form(None),
+                   name: str = Form(None), difficult: int = Form(None),
+                   description: str = Form(None)):
+    tasks = db.lrange("Tasks", 0, -1)
+
+    for task in tasks:
+        info = pickle.loads(task).get_info()
         if info["Id"] == id:
             return RedirectResponse("/", status_code=303)
 
     task = Task(id, name, difficult, description)
-    tasks.append(task)
+    db.lpush("Tasks", pickle.dumps(task))
 
     return RedirectResponse(f"/task/{id}", status_code=303)
 
@@ -68,26 +92,28 @@ async def add_task_page(request: Request):
 async def add_task(request: Request, id: Optional[int] = Form(None),
                    name: Optional[str] = Form(None), difficult: Optional[int] = Form(None),
                    description: Optional[str] = Form(None)):
-    global tasks
+    tasks = db.lrange("Tasks", 0, -1)
 
     for task in tasks:
-        info = task.get_info()
+        info = pickle.loads(task).get_info()
         if info["Id"] == id:
             return RedirectResponse("/", status_code=303)
 
     task = Task(id, name, difficult, description)
-    tasks.append(task)
+    db.lpush("Tasks", pickle.dumps(task))
 
     return RedirectResponse(f"/task/{id}", status_code=303)
 
 
 @app.delete("/delete_task/{id}")
 async def delete_task(request: Request, id):
-    global tasks
+    tasks = db.lrange("Tasks", 0, -1)
 
-    for i in range(len(tasks) - 1, -1, -1):
-        if str(tasks[i].get_info()["Id"]) == id:
-            tasks.remove(tasks[i])
+    for task in tasks:
+        t = pickle.loads(task)
+        info = t.get_info()
+        if str(info["Id"]) == id:
+            db.lrem("Tasks", 0, task)
             break
 
     return RedirectResponse("/", status_code=303)
