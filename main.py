@@ -7,6 +7,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from Task import Task
+from bson.objectid import ObjectId
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
@@ -15,9 +16,9 @@ from pymongo.server_api import ServerApi
 
 client = MongoClient("mongodb://localhost:27017")
 mongo_db = client["db"]
-mongo_db["Tasks"].create_index("Name", unique=True)
+#mongo_db["Tasks"].create_index("Name", unique=True)
 
-app = FastAPI(title="Laba 1", description="This is a laba 1", version="1.0")
+app = FastAPI(title="Laba 3", description="This is a laba 3", version="1.0")
 templates = Jinja2Templates(directory="templates")
 
 radis_db = redis.Redis(host='redis-15797.c93.us-east-1-3.ec2.redns.redis-cloud.com',
@@ -32,7 +33,7 @@ async def main_page(request: Request):
     tasks = mongo_db["Tasks"].find({})
 
     for task in tasks:
-        task.pop('_id', None)
+        task["_id"] = str(task["_id"])
         params["tasks"].append(task)
 
     return templates.TemplateResponse("html/main.html", params, media_type="text/html")
@@ -46,48 +47,55 @@ async def get_tasks():
     tasks = mongo_db["Tasks"].find({})
 
     for task in tasks:
-        task.pop('_id', None)
+        task["_id"] = str(task["_id"])
         params["tasks"].append(task)
 
     return JSONResponse(content=jsonable_encoder(params), media_type="application/json")
 
 
-@app.get("/task/{name}")
-async def task_by_name(name):
+@app.get("/task/{id}")
+async def task_by_name(id: str):
     global radis_db, mongo_db
 
-    task = radis_db.get(name)
+    #task = radis_db.get(name)
+    task = radis_db.get(id)
+    #mongo_db["Tasks"].find_one({"_id": ObjectId("67137be69c77f1643544ff80")})
     if task == None:
-        task = mongo_db["Tasks"].find_one({"Name": name})
+        #task = mongo_db["Tasks"].find_one({"Name": name})
+        task = mongo_db["Tasks"].find_one({"_id": ObjectId(id)})
         if not task == None:
-            task.pop("_id")
-            radis_db.set(name, pickle.dumps(task))
+            radis_db.set(id, pickle.dumps(task))
     else:
         task = pickle.loads(task)
 
     if task:
+        task["_id"] = str(task["_id"])
         return JSONResponse(content=jsonable_encoder(task), media_type="application/json")
     else:
         return Response(status_code=404)
 
 
 @app.put("/update_task")
-async def update_task(name: str,
+async def update_task(id: str, name: Optional[str] = Form(None),
                       difficult: Optional[int] = Form(None), description: Optional[str] = Form(None)):
     global radis_db, mongo_db
 
-    task = await task_by_name(name)
+    task = await task_by_name(id)
     if task.status_code != 200:
         return Response(status_code=task.status_code)
 
     task = json.loads(task.body)
+    if name is not None:
+        task["Name"] = difficult
     if difficult is not None:
         task["Difficult"] = difficult
-    if difficult is not None:
+    if description is not None:
         task["Description"] = description
 
-    mongo_db["Tasks"].find_one_and_update({"Name": name}, {"$set": task}, upsert=True)
-    radis_db.set(name, pickle.dumps(task))
+    #mongo_db["Tasks"].find_one_and_update({"Name": name}, {"$set": task}, upsert=True)
+    radis_db.set(id, pickle.dumps(task))
+    task.pop("_id", None)
+    mongo_db["Tasks"].find_one_and_update({"_id": ObjectId(id)}, {"$set": task}, upsert=True)
 
     return RedirectResponse("/", status_code=200)
 
@@ -100,20 +108,21 @@ async def add_task_page(request: Request):
 
 
 @app.post("/add_task")
-async def add_task(name: str = Form(None), difficult: int = Form(None),
-                   description: str = Form(None)):
+async def add_task(name: str, difficult: int, description: str):
     global mongo_db
 
+    """
     if name == "":
         return RedirectResponse("/", status_code=303)
 
     task = await task_by_name(name)
     if task.status_code == 200:
         return RedirectResponse("/", status_code=303)
+    """
 
     mongo_db["Tasks"].insert_one({"Name": name, "Description": description, "Difficult": difficult})
 
-    return RedirectResponse(f"/task/{name}", status_code=303)
+    return Response(status_code=200)
 
 
 @app.post("/post_add_task", include_in_schema=False)
@@ -122,16 +131,16 @@ async def post_add_task(name: str = Form(None), difficult: int = Form(None),
     return await add_task(name, difficult, description)
 
 
-@app.delete("/delete_task/{name}")
-async def delete_task(name):
+@app.delete("/delete_task/{id}")
+async def delete_task(id: str):
     global radis_db, mongo_db
 
-    task = await task_by_name(name)
+    task = await task_by_name(id)
     if task.status_code != 200:
         return Response(status_code=404)
 
-    mongo_db["Tasks"].delete_one({"Name": name})
-    radis_db.delete(name)
+    mongo_db["Tasks"].delete_one({"_id": ObjectId(id)})
+    radis_db.delete(id)
 
     return Response(status_code=200)
 
