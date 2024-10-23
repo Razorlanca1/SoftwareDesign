@@ -143,6 +143,15 @@ async def delete_task(id: str):
     radis_db.delete(id)
 
     return Response(status_code=200)
+#new delete all
+@app.delete("/delete_all_tasks")
+async def delete_all_tasks():
+    global radis_db, mongo_db
+
+    mongo_db["Tasks"].delete_many({})  # Удаляем все документы из коллекции "Tasks"
+    radis_db.flushdb()  # Очищаем базу данных Redis
+
+    return Response(status_code=200)
 
 
 @app.exception_handler(404)
