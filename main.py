@@ -1,3 +1,5 @@
+import datetime
+
 from fastapi import FastAPI, Request, Response, Form
 from typing import Optional
 import redis, pickle, requests, json
@@ -48,9 +50,8 @@ async def process_consumer():
 
         req = json.loads(msg.value().decode('utf-8'))
         print(req)
-        up = {"Status": req["verdict"]}
+        up = {"Status": req["verdict"], "Confirm_time": datetime.datetime.now()}
         mongo_db["Tasks"].update_one({"_id": ObjectId(req["task_id"])}, {"$set": up})
-
 
 
 @app.get("/", include_in_schema=False)
@@ -135,7 +136,8 @@ async def add_task(name: str, difficult: int, description: str, user_id: str):
     global mongo_db, producer
 
     id = mongo_db["Tasks"].insert_one({"Name": name, "Description": description,
-                                  "Difficult": difficult, "Status": "waiting"}).inserted_id
+                                       "Difficult": difficult, "User_id": user_id,
+                                       "Status": "waiting", "Confirm_time": "-"}).inserted_id
 
     print(id)
     print(json.dumps({"task_id": str(id), "user_id": user_id}))

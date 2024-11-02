@@ -40,6 +40,7 @@ async def process_consumer():
 
         req = json.loads(msg.value().decode('utf-8'))
         print(req)
+
         try:
             user = mongo_db["Users"].find_one({"_id": ObjectId(req["user_id"])})
             print("confirmed")
