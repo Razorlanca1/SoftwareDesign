@@ -30,12 +30,12 @@ consumer.subscribe(['tasks_confirm_answer'])
 client = MongoClient("mongodb://localhost:27017")
 mongo_db = client["db"]
 
-app = FastAPI(title="Laba 4", description="This is a laba 4", version="1.0")
-templates = Jinja2Templates(directory="templates")
+app = FastAPI(title="Laba 5", description="This is a laba 5 tasks mircoservice", version="1.0")
+templates = Jinja2Templates(directory="../templates")
 
-radis_db = redis.Redis(host='redis-15797.c93.us-east-1-3.ec2.redns.redis-cloud.com',
-                       port=15797,
-                       password='2AdSepjiY8UnQ8FwuC4mfxwxd90vTykb')
+radis_db = redis.Redis(host='redis-18283.c83.us-east-1-2.ec2.redns.redis-cloud.com',
+                       port=18283,
+                       password='qHqQO0i50VyVqx2YfoWR4pyyVZKasXAq')
 
 
 @app.on_event('startup')
@@ -53,7 +53,7 @@ async def process_consumer():
         up = {"Status": req["verdict"], "Confirm_time": datetime.datetime.now()}
         mongo_db["Tasks"].update_one({"_id": ObjectId(req["task_id"])}, {"$set": up})
 
-
+"""
 @app.get("/", include_in_schema=False)
 async def main_page(request: Request):
     params = {"tasks": [], "request": request, "current": "Tasks"}
@@ -65,6 +65,7 @@ async def main_page(request: Request):
         params["tasks"].append(task)
 
     return templates.TemplateResponse("html/main.html", params, media_type="text/html")
+"""
 
 
 @app.get("/tasks")
@@ -101,8 +102,8 @@ async def task_by_name(id: str):
 
 
 @app.put("/update_task")
-async def update_task(id: str, name: Optional[str] = Form(None),
-                      difficult: Optional[int] = Form(None), description: Optional[str] = Form(None)):
+async def update_task(id: str, name: str = None,
+                      difficult: int = None, description: str = None):
     global radis_db, mongo_db
 
     task = await task_by_name(id)
@@ -121,14 +122,15 @@ async def update_task(id: str, name: Optional[str] = Form(None),
     task.pop("_id", None)
     mongo_db["Tasks"].find_one_and_update({"_id": ObjectId(id)}, {"$set": task}, upsert=True)
 
-    return RedirectResponse("/", status_code=200)
+    return Response(status_code=200)
 
-
+"""
 @app.get("/add_task_page", include_in_schema=False)
 async def add_task_page(request: Request):
     params = {"request": request, "current": "Add task"}
 
     return templates.TemplateResponse("html/add.html", params, media_type="text/html")
+"""
 
 
 @app.post("/add_task")
@@ -185,4 +187,4 @@ async def unicorn_exception_handler(request: Request, exc):
     return templates.TemplateResponse("html/exception.html", params)
 
 
-app.mount("/css", StaticFiles(directory="templates/css"), "css")
+app.mount("/css", StaticFiles(directory="../templates/css"), "css")

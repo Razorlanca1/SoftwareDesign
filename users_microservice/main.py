@@ -21,11 +21,11 @@ consumer.subscribe(['tasks_to_confirm'])
 client = MongoClient("mongodb://localhost:27017")
 mongo_db = client["db"]
 
-app = FastAPI(title="Laba 4", description="This is a laba 4 users mircoservice", version="1.0")
+app = FastAPI(title="Laba 5", description="This is a laba 5 users mircoservice", version="1.0")
 
-radis_db = redis.Redis(host='redis-15797.c93.us-east-1-3.ec2.redns.redis-cloud.com',
-                       port=15797,
-                       password='2AdSepjiY8UnQ8FwuC4mfxwxd90vTykb')
+radis_db = redis.Redis(host='redis-18283.c83.us-east-1-2.ec2.redns.redis-cloud.com',
+                       port=18283,
+                       password='qHqQO0i50VyVqx2YfoWR4pyyVZKasXAq')
 
 
 @app.on_event('startup')
