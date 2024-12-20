@@ -133,7 +133,7 @@ async def add_user(request: Request, name: str):
                                              params={"name": name}).status_code)
 
 
-@app.delete("/v1/delete_user/{id}")
+@app.delete("/v2/delete_user/{id}")
 async def delete_user(request: Request, id: str):
     try:
         token = request.cookies.get('token')

@@ -74,9 +74,12 @@ async def user_by_name(id: str):
 
     user = radis_db.get("User" + id)
     if user == None:
-        user = mongo_db["Users"].find_one({"_id": ObjectId(id)})
-        if not user == None:
-            radis_db.set("User" + id, pickle.dumps(user))
+        try:
+            user = mongo_db["Users"].find_one({"_id": ObjectId(id)})
+            if not user == None:
+                radis_db.set("User" + id, pickle.dumps(user))
+        except Exception:
+            return Response(status_code=404)
     else:
         user = pickle.loads(user)
 
@@ -121,6 +124,7 @@ async def delete_user(id: str):
     user = await user_by_name(id)
     if user.status_code != 200:
         return Response(status_code=404)
+
 
     mongo_db["Users"].delete_one({"_id": ObjectId(id)})
     radis_db.delete("Users" + id)

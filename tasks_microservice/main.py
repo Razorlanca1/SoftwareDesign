@@ -88,9 +88,12 @@ async def task_by_name(id: str):
 
     task = radis_db.get("Task" + id)
     if task == None:
-        task = mongo_db["Tasks"].find_one({"_id": ObjectId(id)})
-        if not task == None:
-            radis_db.set("Task" + id, pickle.dumps(task))
+        try:
+            task = mongo_db["Tasks"].find_one({"_id": ObjectId(id)})
+            if not task == None:
+                radis_db.set("Task" + id, pickle.dumps(task))
+        except Exception:
+            return Response(status_code=404)
     else:
         task = pickle.loads(task)
 
@@ -120,6 +123,7 @@ async def update_task(id: str, name: str = None,
 
     radis_db.set("Task" + id, pickle.dumps(task))
     task.pop("_id", None)
+
     mongo_db["Tasks"].find_one_and_update({"_id": ObjectId(id)}, {"$set": task}, upsert=True)
 
     return Response(status_code=200)
